@@ -80,6 +80,7 @@ abline(v=median(pollution$pm25), col = "magenta" ,lwd =4)
 # Barplot
 class(pollution$region)
 table(pollution$region) # to summarize categorical variable
+class(table(pollution$region))
 barplot(table(pollution$region), col = "wheat2", main = "Number of countries in each region")
 # sorte d'histogramme de variable categorielles...
 ?barplot()
@@ -778,3 +779,652 @@ qplot(votes, rating, data = movies) + geom_smooth() # YES
 
 qplot(votes, rating, data = movies, panel = panel.loess)
 qplot(votes, rating, data = movies) + stats_smooth("loess")
+
+
+# ----------------------------------------------------------
+# Week 3 
+# ----------------------------------------------------------
+
+
+
+
+# Notion de distance
+# Methode de groupage
+# Visualisation et interpretation ...
+
+# ----------------------------------------------------------
+# Hierarchical Clustering
+# ----------------------------------------------------------
+# Pas mal pour voir dans les high dim dadates...
+
+# Approach agglomerative...
+# Algo : 
+# tant qu'il reste plusieurs elts
+#   trouver les deux ??l??ments les plus proches au sens de la distance choisie
+#   remplacer les deux ??l??ments par un ??l??ment "groupe" 
+
+# Deux methodes : distance & merging approach
+
+# Le r??sultat est un arbre dont les noeuds sont les groupes (les feuilles sont les ??l??ments)
+# les moeuds ont un attribut quantitatif : la distance entre les deux fils...
+
+# En math??matiques, on appelle distance sur un ensemble E une application 
+# d d??finie sur le produit E2 = E??E et ?? valeurs dans l'ensemble ???+ des r??els positifs,
+
+# d :E X E - R+ verifiant les propri??t??s suivantes :
+# sym??trie : qq A et B, de E d(A,B) = d(B,A)
+# s??paration : qq A, B de ExE, d(A,B) = 0 <=> A = B
+# sous-additivite / in??gatite triangulaire : qq A,B,C de E d(A,C) <= d(A,B)+d(B,C)
+
+# Sur un esp vect norm?? (E,N)
+# N(y-x) est un distance c'est la distance canonique
+# vu que une norme sur un K esp vect E ou K est numi d'une val abs
+# est plus restrictif... avec homogeneite (N(a.V)=abs(a).N(V))
+
+# Distance classique : 
+# Euclidienne
+# Manhatan
+# Minkovski ordre p (racine p iemme de la somme des val abs des diff de puiss p) ie g??neralisation Eucl & M
+# Appell??e la p distance
+# converge... distance de Tchebychev
+
+set.seed(1234)
+
+par(mfrow = c(1, 1), mar = c(0, 0, 0, 0))
+x <- rnorm(12, mean = rep(1:3, each = 4), sd = 0.2)
+y <- rnorm(12, mean = rep(c(1, 2, 1), each = 4), sd = 0.2)
+plot(x, y, col = "blue", pch = 19, cex = 2)
+text(x + 0.05, y + 0.05, labels = as.character(1:12))
+
+
+dataFrame <- data.frame(x = x, y = y)
+dist(dataFrame) # Matrice des distance entre les points
+?dist()
+dist(dataFrame, method = "manhattan")
+dist(dataFrame, method = "maximum")
+dist(dataFrame, method = "binary")
+dist(dataFrame, method = "minkowski", p = 5)
+
+
+x <- rnorm(100, mean = rep(1:4, each = 25), sd = 0.2)
+y <- rnorm(100, mean = rep(c(1, 2, 1,2), each = 25), sd = 0.2)
+plot(x, y, col = "blue", pch = 18, cex = 1)
+text(x + 0.05, y + 0.05, labels = as.character(1:100), cex = 0.5)
+
+?text()
+
+x <- rnorm(100, mean = rep(1:4, each = 25), sd = 0.1)
+y <- rnorm(100, mean = rep(c(1, 2, 1,2), each = 25), sd = 0.1)
+y <- y[sample(1:100)]
+plot(x, y, col = "blue", pch = 18, cex = 1)
+text(x + 0.05, y + 0.05, labels = as.character(1:100), cex = 0.5)
+
+?text()
+
+par(mfrow = c(1, 1), mar = c(0, 0, 0, 0))
+x <- rnorm(12, mean = rep(1:3, each = 4), sd = 0.2)
+y <- rnorm(12, mean = rep(c(1, 2, 1), each = 4), sd = 0.2)
+plot(x, y, col = "blue", pch = 19, cex = 2)
+text(x + 0.05, y + 0.05, labels = as.character(1:12))
+
+par(mar = c(5.1, 4.1, 4.1, 2.1))
+dataFrame <- data.frame(x = x, y = y)
+distxy <- dist(dataFrame) # euclidienne par defaut
+hClustering <- hclust(distxy)
+plot(hClustering) # dendrogram
+class(hClustering)
+attributes(hClustering)
+hClustering
+
+?hclust()
+# method = "ward.D", "ward.D2", "single", "complete", 
+# "average" (= UPGMA), "mcquitty" (= WPGMA), "median" (= WPGMC) or "centroid" (= UPGMC)
+
+
+
+myplclust <- function(hclust, lab = hclust$labels, lab.col = rep(1, length(hclust$labels)), 
+                      hang = 0.1, ...) {
+  ## modifiction of plclust for plotting hclust objects *in colour*!  Copyright
+  ## Eva KF Chan 2009 Arguments: hclust: hclust object lab: a character vector
+  ## of labels of the leaves of the tree lab.col: colour for the labels;
+  ## NA=default device foreground colour hang: as in hclust & plclust Side
+  ## effect: A display of hierarchical cluster with coloured leaf labels.
+  y <- rep(hclust$height, 2)
+  x <- as.numeric(hclust$merge)
+  y <- y[which(x < 0)]
+  x <- x[which(x < 0)]
+  x <- abs(x)
+  y <- y[order(x)]
+  x <- x[order(x)]
+  plot(hclust, labels = FALSE, hang = hang, ...)
+  text(x = x, y = y[hclust$order] - (max(hclust$height) * hang), labels = lab[hclust$order], 
+       col = lab.col[hclust$order], srt = 90, adj = c(1, 0.5), xpd = NA, ...)
+}
+
+
+# http://gallery.r-enthusiasts.com/RGraphGallery.php?graph=79
+
+# How to merge points together....
+# average...
+# Complete linkage : prendre la plus grande des distance des couples des 2 clusters...
+# la methode average donnerait la distance entre les deux baricentres
+dataFrame <- data.frame(x = x, y = y)
+distxy <- dist(dataFrame)
+hClustering <- hclust(distxy)
+myplclust(hClustering, lab = rep(1:3, each = 4), lab.col = rep(1:3, each = 4))
+
+
+dataFrame <- data.frame(x = x, y = y)
+set.seed(143)
+dataMatrix <- as.matrix(dataFrame)[sample(1:12), ]
+heatmap(dataMatrix)
+
+x <- rnorm(100, mean = rep(1:4, each = 25), sd = 0.2)
+y <- rnorm(100, mean = rep(c(1, 2, 1,2), each = 25), sd = 0.1)
+y <- y[sample(1:100)]
+plot(x, y, col = "blue", pch = 18, cex = 1)
+text(x + 0.05, y + 0.05, labels = as.character(1:100), cex = 0.5)
+dataFrame <- data.frame(x = x, y = y)
+set.seed(143)
+dataMatrix <- as.matrix(dataFrame)[sample(1:100), ]
+heatmap(dataMatrix)
+
+# ----------------------------------------------------------
+# heatmap interessant pour voir rapidement des gros dataset X avec 
+# beaucoup de lignes et/ou de colonnes
+# ----------------------------------------------------------
+
+# Attention a la sensibilite au scaling et aux points extr??mes...
+# tester en changeant la distance metrique ou merging strat
+
+# ----------------------------------------------------------
+# K-Means Clustering
+# ----------------------------------------------------------
+
+# partioning approach
+# param : number of cluster, initials centroids, distance... 
+# Algo 
+#   Affecter les ??l??ments aux centroids (au sens de la distance choisie)
+#   recalculer les centroid (sorte de bericentre...)
+# Arret apres un certain nb d'it??ration? quand les cluster ne changent plus?
+set.seed(1234)
+par(mar = c(0, 0, 0, 0))
+x <- rnorm(12, mean = rep(1:3, each = 4), sd = 0.2)
+y <- rnorm(12, mean = rep(c(1, 2, 1), each = 4), sd = 0.2)
+plot(x, y, col = "blue", pch = 19, cex = 2)
+text(x + 0.05, y + 0.05, labels = as.character(1:12))
+
+
+
+dataFrame <- data.frame(x, y)
+kmeansObj <- kmeans(dataFrame, centers = 3)
+names(kmeansObj)
+
+
+kmeansObj$cluster # vecteur donnant le cluster du point d'indice i
+
+kmeansObj$centers # coord des centres
+
+?kmeans()
+
+par(mar = rep(0.2, 4))
+plot(x, y, col = kmeansObj$cluster, pch = 19, cex = 2)
+points(kmeansObj$centers, col = 1:3, pch = 3, cex = 3, lwd = 3)
+
+
+#----------------------------------------------------------
+par(mfrow = c(1, 1), mar = c(5.1, 4.1, 4.1, 2.1))
+x <- rnorm(100, mean = rep(1:4, each = 25), sd = 0.2)
+y <- rnorm(100, mean = rep(c(1, 2, 1,2), each = 25), sd = 0.2)
+plot(x, y, col = "blue", pch = 18, cex = 1)
+text(x + 0.05, y + 0.05, labels = as.character(1:100), cex = 0.5)
+
+dataFrame <- data.frame(x, y)
+kmeansObj <- kmeans(dataFrame, centers = 4)
+plot(x, y, col = kmeansObj$cluster, pch = 18, cex = 1)
+text(x + 0.05, y + 0.05, labels = as.character(1:100), cex = 0.5)
+
+kmeansObj <- kmeans(dataFrame, centers = 3)
+plot(x, y, col = kmeansObj$cluster, pch = 18, cex = 1)
+text(x + 0.05, y + 0.05, labels = as.character(1:100), cex = 0.5)
+
+kmeansObj <- kmeans(dataFrame, centers = 2)
+plot(x, y, col = kmeansObj$cluster, pch = 18, cex = 1)
+text(x + 0.05, y + 0.05, labels = as.character(1:100), cex = 0.5)
+
+
+kmeansObj <- kmeans(dataFrame, centers = 5)
+plot(x, y, col = kmeansObj$cluster, pch = 18, cex = 1)
+text(x + 0.05, y + 0.05, labels = as.character(1:100), cex = 0.5)
+
+
+x <- rnorm(12, mean = rep(1:3, each = 4), sd = 0.2)
+y <- rnorm(12, mean = rep(c(1, 2, 1), each = 4), sd = 0.2)
+plot(x, y, col = "blue", pch = 19, cex = 2)
+text(x + 0.05, y + 0.05, labels = as.character(1:12))
+dataFrame <- data.frame(x, y)
+
+set.seed(1234)
+dataMatrix <- as.matrix(dataFrame)[sample(1:12), ]
+kmeansObj2 <- kmeans(dataMatrix, centers = 3)
+par(mfrow = c(1, 2), mar = c(2, 4, 0.1, 0.1))
+image(t(dataMatrix)[, nrow(dataMatrix):1], yaxt = "n")
+image(t(dataMatrix)[, order(kmeansObj2$cluster)], yaxt = "n")
+
+# det Nb of clusters
+# https://en.wikipedia.org/wiki/Determining_the_number_of_clusters_in_a_data_set
+
+
+#----------------------------------------------------------------------------
+# Dimension reduction
+# Principal Component analysis
+# Singular value decomposition
+#----------------------------------------------------------------------------
+par(mar = rep(0.2, 4),mfrow = c(1, 1))
+set.seed(12345)
+par(mar = rep(0.2, 4))
+dataMatrix <- matrix(rnorm(400), nrow = 40)
+image(1:10, 1:40, t(dataMatrix)[, nrow(dataMatrix):1])
+# image(1:10, 1:40, t(dataMatrix))
+image(1:10, 1:40, t(dataMatrix)[, nrow(dataMatrix):1], col = rainbow(10))
+image(1:10, 1:40, t(dataMatrix)[, nrow(dataMatrix):1], col = terrain.colors(5, alpha = 1))
+
+dim(dataMatrix)
+dim(t(dataMatrix))
+
+?t()
+?image()
+M <- matrix(rep(0,400),nrow = 10 )
+image(1:10, 1:40, M)
+M <- matrix(rep(1,400),nrow = 10 )
+image(1:10, 1:40, M)
+M[3,] <- 0
+image(1:10, 1:40, M)
+M <- matrix(rep(sample(1:10),40),nrow = 10 )
+image(1:10, 1:40, M)
+
+
+image(1:10, 1:40, t(matrix(rep(10,400),nrow = 40 )))
+
+heatmap(dataMatrix)
+
+heatmap(dataMatrix, col = rainbow(100))
+
+set.seed(678910)
+for (i in 1:40) {
+  # flip a coin
+  coinFlip <- rbinom(1, size = 1, prob = 0.5)
+  # if coin is heads add a common pattern to that row
+  if (coinFlip) {
+    dataMatrix[i, ] <- dataMatrix[i, ] + rep(c(0, 3), each = 5)
+  }
+}
+
+rep(c(0, 3), each = 5)
+
+par(mar = rep(0.2, 4))
+image(1:10, 1:40, t(dataMatrix)[, nrow(dataMatrix):1])
+
+
+par(mar = rep(0.2, 4))
+heatmap(dataMatrix,col = rainbow(100))
+heatmap(dataMatrix)
+
+# clustering hiearchique sur les lignes....du data frame / matrix
+hh <- hclust(dist(dataMatrix))
+class(hh)
+attributes(hh)
+hh$order
+hh
+
+hh$merge
+hh$height # les distance succecives....pour grouper ... 40-1
+hh$order # les indices des noeuds dans l'ordre du rattachement
+hh$labels
+hh$method
+hh$call
+hh$dist.method
+
+dataMatrixOrdered <- dataMatrix[hh$order, ]
+
+par(mfrow = c(1, 3), mar = c(5.1, 4.1,4.1,2.1))
+image(t(dataMatrixOrdered)[, nrow(dataMatrixOrdered):1])
+plot(rowMeans(dataMatrixOrdered), 40:1, , xlab = "Row Mean", ylab = "Row", pch = 19)
+plot(colMeans(dataMatrixOrdered), xlab = "Column", ylab = "Column Mean", pch = 19)
+
+rowMeans(dataMatrixOrdered)
+colMeans(dataMatrixOrdered)
+
+# pourquoi les dis entre les points avec 3 serait elle moindre????
+
+
+# multivariate X1, ....Xn so X1 = (X11,...,X1n)
+# trouver une matrice de rang inf??rieur... epxliquant suff les donn??ees
+
+# SVD
+# Singuliar Value Decomposition
+# X matrix column variable, rows obs
+# X = U*D*t(V)
+# U (left singular vecteurs) orthogonal
+# V (right  singular vecteurs) orthogonal 
+# D diagonal matrix (singular values)
+
+# PCA Principal component analysis
+# SVD a partir de Xnorm (chaque colonne normalis??e ie (Xci - mean (X(ci)) / sd(Xci))
+# V est la PCA
+
+svd1 <- svd(scale(dataMatrixOrdered))
+class(svd1)
+svd1
+# liste avec d les 10 valeur propores, u matrice 40,10 et V matrice 10x10
+par(mfrow = c(1, 3))
+image(t(dataMatrixOrdered)[, nrow(dataMatrixOrdered):1])
+plot(svd1$u[, 1], 40:1, , xlab = "Row", ylab = "First left singular vector", 
+     pch = 19)
+plot(svd1$v[, 1], xlab = "Column", ylab = "First right singular vector", pch = 19)
+
+
+image(t(dataMatrixOrdered)[, nrow(dataMatrixOrdered):1])
+plot(svd1$u[, 2], 40:1, , xlab = "Row", ylab = "2 left singular vector", 
+     pch = 19)
+plot(svd1$v[, 2], xlab = "Column", ylab = "2 right singular vector", pch = 19)
+
+
+
+par(mfrow = c(1, 2))
+plot(svd1$d, xlab = "Column", ylab = "Singular value", pch = 19)
+plot(svd1$d^2/sum(svd1$d^2), xlab = "Column", ylab = "Prop. of variance explained", 
+     pch = 19)
+
+?scale() # pour centrer et r??duire les colonnes d'une matrice
+svd1 <- svd(scale(dataMatrixOrdered))
+pca1 <- prcomp(dataMatrixOrdered, scale = TRUE)
+
+class(pca1)
+pca1
+svd1$v
+
+pca1$rotation[, 1]
+svd1$v[, 1]
+identical(pca1$rotation[, 1],svd1$v[, 1])
+
+plot(pca1$rotation[, 1], svd1$v[, 1], pch = 19, xlab = "Principal Component 1", 
+     ylab = "Right Singular Vector 1")
+abline(c(0, 1))
+
+
+constantMatrix <- dataMatrixOrdered*0
+for(i in 1:dim(dataMatrixOrdered)[1]){constantMatrix[i,] <- rep(c(0,1),each=5)}
+constantMatrix
+
+svd1 <- svd(constantMatrix)
+svd1$v[, 1]
+svd1$u[, 1]
+svd1$d[1]
+svd1$d[2]
+round(svd1$d^2/sum(svd1$d^2),3)
+
+par(mfrow=c(1,3))
+image(t(constantMatrix)[,nrow(constantMatrix):1])
+plot(svd1$d,xlab="Column",ylab="Singular value",pch=19)
+plot(svd1$d^2/sum(svd1$d^2),xlab="Column",ylab="Prop. of variance explained",pch=19)
+
+
+image(1:10, 1:40, t(dataMatrix)[, nrow(dataMatrix):1])
+
+set.seed(678910)
+for (i in 1:40) {
+  # flip a coin
+  coinFlip1 <- rbinom(1, size = 1, prob = 0.5)
+  coinFlip2 <- rbinom(1, size = 1, prob = 0.5)
+  # if coin is heads add a common pattern to that row
+  if (coinFlip1) {
+    dataMatrix[i, ] <- dataMatrix[i, ] + rep(c(0, 5), each = 5)
+  }
+  if (coinFlip2) {
+    dataMatrix[i, ] <- dataMatrix[i, ] + rep(c(0, 5), 5)
+  }
+}
+image(1:10, 1:40, t(dataMatrix)[, nrow(dataMatrix):1])
+hh <- hclust(dist(dataMatrix))
+dataMatrixOrdered <- dataMatrix[hh$order, ]
+
+rep(c(0, 5), 5)
+rep(c(0, 5), each = 5)
+
+svd2 <- svd(scale(dataMatrixOrdered))
+par(mfrow = c(1, 3))
+image(t(dataMatrixOrdered)[, nrow(dataMatrixOrdered):1])
+plot(rep(c(0, 1), each = 5), pch = 19, xlab = "Column", ylab = "Pattern 1")
+plot(rep(c(0, 1), 5), pch = 19, xlab = "Column", ylab = "Pattern 2")
+
+svd2 <- svd(scale(dataMatrixOrdered))
+par(mfrow = c(1, 3))
+image(t(dataMatrixOrdered)[, nrow(dataMatrixOrdered):1])
+plot(svd2$v[, 1], pch = 19, xlab = "Column", ylab = "First right singular vector")
+plot(svd2$v[, 2], pch = 19, xlab = "Column", ylab = "Second right singular vector")
+
+
+svd1 <- svd(scale(dataMatrixOrdered))
+par(mfrow = c(1, 2))
+plot(svd1$d, xlab = "Column", ylab = "Singular value", pch = 19)
+plot(svd1$d^2/sum(svd1$d^2), xlab = "Column", ylab = "Percent of variance explained", 
+     pch = 19)
+
+
+
+dataMatrix2 <- dataMatrixOrdered
+dim(dataMatrix2)
+length(dataMatrix2)
+## Randomly insert some missing data (sur 40 valeurs des 100 premieres...)
+dataMatrix2[sample(1:100, size = 40, replace = FALSE)] <- NA
+svd1 <- svd(scale(dataMatrix2))  ## Doesn't work!
+
+sample(1:100, size = 40, replace = FALSE)
+
+
+# Il faut doncfaire qq chose pour remplacer les missing values
+
+#source("http://bioconductor.org/biocLite.R")
+#biocLite()
+#biocLite(c("impute"))
+library(impute)  ## Available from http://bioconductor.org
+
+image(1:10,1:40,t(dataMatrixOrdered))
+
+dataMatrix2 <- dataMatrixOrdered
+dataMatrix2[sample(1:100,size=40,replace=FALSE)] <- NA
+sum(is.na(dataMatrix2[1:400]))
+dataMatrix2 <- impute.knn(dataMatrix2)$data
+sum(is.na(dataMatrix2[1:400]))
+?impute.knn()
+class(dataMatrix2)
+# k-NN algorithm 
+
+# In k-NN classification, 
+# the output is a class membership. 
+# An object is classified by a majority vote of its neighbors, 
+# with the object being assigned to the class most common 
+# among its k nearest neighbors (k is a positive integer, typically small). 
+# If k = 1, then the object is simply assigned to the class of that single nearest neighbor.
+
+# In k-NN regression, 
+# the output is the property value for the object. 
+# This value is the average of the values of its k nearest neighbors
+
+# Ici on prend k(10 par defaut) k nearest neibours of the row
+# mesur?? avec quelle distance ???
+# par exemple avec k = 5 ... +- moyenne des 5
+
+
+svd1 <- svd(scale(dataMatrixOrdered)); svd2 <- svd(scale(dataMatrix2))
+par(mfrow=c(1,2)); plot(svd1$v[,1],pch=19); plot(svd2$v[,1],pch=19)
+
+
+load("../data/face.rda")
+class(faceData)
+dim(faceData)
+image(t(faceData)[, nrow(faceData):1])
+
+svd1 <- svd(scale(faceData))
+plot(svd1$d^2/sum(svd1$d^2), pch = 19, xlab = "Singular vector", ylab = "Variance explained")
+
+
+
+svd1 <- svd(scale(faceData))
+## Note that %*% is matrix multiplication
+
+# Here svd1$d[1] is a constant
+approx1 <- svd1$u[, 1] %*% t(svd1$v[, 1]) * svd1$d[1]
+
+# In these examples we need to make the diagonal matrix out of d
+approx5 <- svd1$u[, 1:5] %*% diag(svd1$d[1:5]) %*% t(svd1$v[, 1:5])
+approx10 <- svd1$u[, 1:10] %*% diag(svd1$d[1:10]) %*% t(svd1$v[, 1:10])
+
+par(mfrow = c(1, 4))
+image(t(approx1)[, nrow(approx1):1], main = "(a)")
+image(t(approx5)[, nrow(approx5):1], main = "(b)")
+image(t(approx10)[, nrow(approx10):1], main = "(c)")
+image(t(faceData)[, nrow(faceData):1], main = "(d)")  ## Original data
+
+# Bruitage
+
+load("../data/face.rda")
+class(faceData)
+dim(faceData)
+image(t(faceData)[, nrow(faceData):1])
+
+
+faceDataBruit10 <- faceData
+faceDataBruit50 <- faceData
+faceDataBruit80 <- faceData
+faceDataBruit10[sample(1:1024, size = 100, replace = FALSE)] <- NA
+faceDataBruit50[sample(1:1024, size = 500, replace = FALSE)] <- NA
+faceDataBruit80[sample(1:1024, size = 800, replace = FALSE)] <- NA
+
+image(t(faceData)[, nrow(faceData):1], main = "(origin)")
+image(t(faceDataBruit10)[, nrow(faceDataBruit10):1], main = "(10%)")
+image(t(faceDataBruit50)[, nrow(faceDataBruit10):1], main = "(50%)")
+image(t(faceDataBruit80)[, nrow(faceDataBruit10):1], main = "(80%)")
+?image()
+
+# tentative de reconstruction avec k-NN
+faceDataBruit10New <- impute.knn(faceDataBruit10)$data
+faceDataBruit50New <- impute.knn(faceDataBruit50)$data
+faceDataBruit80New <- impute.knn(faceDataBruit80)$data
+
+image(t(faceData)[, nrow(faceData):1], main = "(origin)")
+image(t(faceDataBruit10)[, nrow(faceDataBruit10):1], main = "(10%)")
+image(t(faceDataBruit10New)[, nrow(faceDataBruit10New):1], main = "(New 10%)")
+
+image(t(faceData)[, nrow(faceData):1], main = "(origin)")
+image(t(faceDataBruit50)[, nrow(faceDataBruit50):1], main = "(50%)")
+image(t(faceDataBruit50New)[, nrow(faceDataBruit50New):1], main = "(New 50%)")
+svd50 <- svd(scale(faceDataBruit50New))
+plot(svd50$d^2/sum(svd50$d^2), pch = 19, xlab = "Singular vector", ylab = "Variance explained")
+approx50_6 <- svd50$u[, 1:6] %*% diag(svd50$d[1:6]) %*% t(svd50$v[, 1:6])
+image(t(faceData)[, nrow(faceData):1], main = "(origin)")
+image(t(faceDataBruit50)[, nrow(faceDataBruit50):1], main = "(50%)")
+image(t(faceDataBruit50New)[, nrow(faceDataBruit50New):1], main = "(New 50%)")
+image(t(faceDataBruit50New)[, nrow(faceDataBruit50New):1], main = "(Approx 6d New 50%)")
+
+
+# Scale matters...
+# Pattern mixed together
+# Computation intensive....
+
+# Alternatives : 
+# Factor analysis / Independent component analysis / Latent semantic analysis
+
+#----------------------------------------
+# Working with Color in R Plots
+#----------------------------------------
+# default in R is bad
+par(mfrow=c(1,2))
+library(datasets)
+data(volcano)
+str(volcano)
+class(volcano)
+image(volcano, col = heat.colors(50))
+image(volcano, col = topo.colors(50))
+
+
+
+library(grDevices)
+colors()
+# function colorRamp() et colorRampPalette()
+
+
+
+pal <- colorRamp(c("red", "blue"))
+class(pal)
+
+pal(0)
+pal(1)
+pal(0.5)
+pal(seq(0, 1, len = 10))
+
+
+pal <- colorRampPalette(c("red", "yellow"))
+pal(2) # renvoie vecteur caractere de longueur 2 
+# correspondant aux 2 couleurs..
+# couleur codee en hexadecimal 2 digit pour Red 2 digit pour Green , 2 pour Bleu
+# ex FF0000 est Red 255, Green 0 Blue 0
+pal(10)
+
+
+# trois type de palettes 
+# Sequential / Diverging / Qualitative
+
+library(RColorBrewer)
+?brewer.pal()
+brewer.pal.info
+
+# Sequential 
+cols <- brewer.pal(3, "BuGn")
+cols
+cols <- brewer.pal(5, "BuGn")
+cols
+cols <- brewer.pal(3, "BuGn")
+cols
+
+pal <- colorRampPalette(cols)
+image(volcano, col = pal(20))
+
+# Qualitative
+cols <- brewer.pal(8, "Paired")
+cols
+pal <- colorRampPalette(cols)
+image(volcano, col = pal(20))
+# debille
+
+# divergeant
+cols <- brewer.pal(8, "RdYlBu")
+cols
+pal <- colorRampPalette(cols)
+image(volcano, col = pal(20))
+# debille
+
+
+x <- rnorm(10000)
+y <- rnorm(10000)
+plot(x,y)
+
+smoothScatter(x,y)
+?plot()
+
+?rgb()
+rgb(1,0,0)
+# HEX string to be passed to plot, ...
+
+rgb(1,0.1,0.8, 0.2) # dernier param est la non transparence de 0 a 1
+
+plot(x,y,col = rgb(1,0,0, 0.1) ,pch = 19)
+smoothScatter(x,y)
+
+plot(x,y,col = rgb(0.8,0.3,0.8, 0.05) ,pch = 19)
+smoothScatter(x,y)
+
+
+
+
