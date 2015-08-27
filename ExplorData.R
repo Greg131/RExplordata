@@ -306,6 +306,7 @@ plot(x,y, pch = 4)
 example(points)
 
 
+
 x <- rnorm(100)
 y <- rnorm(100)
 plot(x,y, pch = 24, col = "red", bg = "blue") # Boundary and fill param col & bg
@@ -589,6 +590,7 @@ g+geom_point()
 
 g + geom_point() + geom_smooth()
 g + geom_point() + geom_smooth(method = "lm")
+g + geom_point() + geom_smooth(method = "lm", se = FALSE)
 g + geom_point() + facet_grid(.~drv) + geom_smooth(method = "lm")
 
 xlab("aaa")
