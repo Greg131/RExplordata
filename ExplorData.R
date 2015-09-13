@@ -2,7 +2,7 @@
 # R Exploratory Data Analysis
 # ----------------------------------------------------------
 
-setwd("/Users/GA/dropbox/Datascience/Universite_Johns-Hopkins/Exploration_analytique_de_donnees/RExplordata")
+setwd("~/Dropbox/Datascience/Universite_Johns-Hopkins/Exploration_analytique_de_donnees/RExplordata")
 getwd() # Get working directory 
 
 if (!file.exists("../data"))       {
@@ -10,16 +10,19 @@ if (!file.exists("../data"))       {
 }
 
 pollution <- read.csv("../data/avgpm25.csv", colClasses = c("numeric","character","factor",
-                                                           "numeric","numeric"))
+                                                            "numeric","numeric"))
+?head
 head(pollution)
+tail(pollution)
 str(pollution)
 summary(pollution)
 # ----------------------------------------------------------
-# Simple Summaries of the dada 
-# 1 dim : summary, boxplot (boites a moustache), histogram, barplot
+# Simple Summaries of the data 
+# 1 dim : summary, boxplot (boites a moustache), histogram, barplot, 
+#       table (pour les variables categorielles)
 # 2 dim : multiple/overlayed 1-D plots, Scaterplots
 # >2 dim : multiple/overlayed 2-D plots, add Color, size , shape
-#         spinning plots, 3-D plots
+#       spinning plots, 3-D plots
 # ---------------------------------------------------------
 
 # ---------------------------------------------------------
@@ -34,7 +37,8 @@ summary(pollution$pm25)
 summary(pollution)
 table(pollution$region) # Pour les factors / variables categorielles
 
-# Boxplot (1 variables num??riques...)
+
+# Boxplot (1 variables numeriques...)
 boxplot(pollution$pm25, col = "blue")
 par("col") #valeur par defaut
 colors() # donne la leste de couleurs....
@@ -784,11 +788,8 @@ qplot(votes, rating, data = movies) + stats_smooth("loess")
 
 
 # ----------------------------------------------------------
-# Week 3 
+# Week 3 - clustering
 # ----------------------------------------------------------
-
-
-
 
 # Notion de distance
 # Methode de groupage
@@ -801,57 +802,90 @@ qplot(votes, rating, data = movies) + stats_smooth("loess")
 
 # Approach agglomerative...
 # Algo : 
-# tant qu'il reste plusieurs elts
-#   trouver les deux ??l??ments les plus proches au sens de la distance choisie
-#   remplacer les deux ??l??ments par un ??l??ment "groupe" 
+#       tant qu'il reste plusieurs groupe/elements
+#               trouver les deux groupe/elements les plus proches entre eux au sens de la distance choisie
+#               remplacer grouper des les deux groupes/elements 
+
+
+#       Pour i=1 ?? individus.longueur Faire
+#               classes.ajouter(nouvelle classe(individu[i]));
+#       Fin Pour
+#       Tant Que classes.longueur > nbClasses Faire
+#               // Calcul des dissimilarit??s entre classes dans une matrice triangulaire sup??rieure
+#               // suppose au moin la propriete de symetrie poure dissim
+#               matDissim = nouvelle matrice(classes.longueur,classes.longueur);
+#               Pour i=1 ?? classes.longueur Faire
+#                       Pour j=i+1 ?? classes.longueur Faire
+#                               matDissim[i][j] = dissim(classes[i],classes[j]);
+#                       Fin Pour
+#               Fin Pour
+#               // Recherche du minimum des dissimilarit??s
+#               Soit (i,j) tel que matDissim[i][j] = min(matDissim[k][l]) avec 1<=k<=classes.longueur et k+1<=l<=classes.longueur;
+#               // au fait si plus de 2 ??? ok en fait ... sauf que l'arbre binaire depend du codage...
+#               // Fusion de classes[i] et classes[j]
+#               Pour tout element dans classes[j] Faire
+#                       classes[i].ajouter(element);
+#               Fin pour
+#               supprimer(classes[j]);
+#       Fin Tant Que
+
 
 # Deux methodes : distance & merging approach
 
-# Le r??sultat est un arbre dont les noeuds sont les groupes (les feuilles sont les ??l??ments)
-# les moeuds ont un attribut quantitatif : la distance entre les deux fils...
+# Le resultat est un arbre binaire dont les noeuds sont les groupes et les feuilles les elements
+# les noeuds ont un attribut quantitatif : la distance entre ses deux fils...
 
-# En math??matiques, on appelle distance sur un ensemble E une application 
-# d d??finie sur le produit E2 = E??E et ?? valeurs dans l'ensemble ???+ des r??els positifs,
+# En mathematiques, on appelle distance sur un ensemble E une application 
+# d definie sur le produit E2 = EXE et a valeurs dans l'ensemble R+ des reels positifs,
 
-# d :E X E - R+ verifiant les propri??t??s suivantes :
-# sym??trie : qq A et B, de E d(A,B) = d(B,A)
-# s??paration : qq A, B de ExE, d(A,B) = 0 <=> A = B
-# sous-additivite / in??gatite triangulaire : qq A,B,C de E d(A,C) <= d(A,B)+d(B,C)
+# d :E X E -> R+ verifiant les proprietes suivantes :
+#       - symetrie : qq A et B, de E d(A,B) = d(B,A)
+#       - separation : qq A, B de ExE, d(A,B) = 0 <=> A = B
+#       - sous-additivite / inegatite triangulaire : qq A,B,C de E d(A,C) <= d(A,B)+d(B,C)
 
-# Sur un esp vect norm?? (E,N)
+# Sur un esp vect norme (E,N)
 # N(y-x) est un distance c'est la distance canonique
 # vu que une norme sur un K esp vect E ou K est numi d'une val abs
 # est plus restrictif... avec homogeneite (N(a.V)=abs(a).N(V))
 
 # Distance classique : 
-# Euclidienne
-# Manhatan
-# Minkovski ordre p (racine p iemme de la somme des val abs des diff de puiss p) ie g??neralisation Eucl & M
-# Appell??e la p distance
-# converge... distance de Tchebychev
+#       Euclidienne
+#       Manhatan
+#       Minkovski ordre p (racine p iemme de la somme des val abs des diff de puiss p) ie g??neralisation Eucl & M
+#               Appellee la p distance
+#       Distance de Tchebychev limite p->inf de d de Minkovski
+
+# Cas interessant est la distance ultrametrique
+# Inegalite triangulaire remplacee par d(a,c) <= max(d(a,b),d(b,c))
+#       tous les triengles ont isoceles, ... 
+#       les boules de rayon r donn?? forme un partition...
+#       on peut donc faire du clustering en faisant varier r de 0 a max,...
 
 set.seed(1234)
 
-par(mfrow = c(1, 1), mar = c(0, 0, 0, 0))
+par(mfrow = c(1, 1), mar = c(4, 0, 0, 0))
 x <- rnorm(12, mean = rep(1:3, each = 4), sd = 0.2)
 y <- rnorm(12, mean = rep(c(1, 2, 1), each = 4), sd = 0.2)
 plot(x, y, col = "blue", pch = 19, cex = 2)
 text(x + 0.05, y + 0.05, labels = as.character(1:12))
 
-
 dataFrame <- data.frame(x = x, y = y)
-dist(dataFrame) # Matrice des distance entre les points
+dist(dataFrame) # Matrice des distance (par defaut euclidienne) entres les points 
 ?dist()
-dist(dataFrame, method = "manhattan")
-dist(dataFrame, method = "maximum")
-dist(dataFrame, method = "binary")
+dist(dataFrame, method = "manhattan")   # L1 distance
+dist(dataFrame, method = "maximum")     # Tchebychev
+dist(dataFrame, method = "binary")      # coord trans en 0 ou 1 puis prop de 1 sur la diff??rence...
+dist(dataFrame, method = "canberra")      # canberra
 dist(dataFrame, method = "minkowski", p = 5)
 
+dist <- dist(dataFrame, method = "minkowski", p = 5)
+class(dist)
 
-x <- rnorm(100, mean = rep(1:4, each = 25), sd = 0.2)
-y <- rnorm(100, mean = rep(c(1, 2, 1,2), each = 25), sd = 0.2)
-plot(x, y, col = "blue", pch = 18, cex = 1)
-text(x + 0.05, y + 0.05, labels = as.character(1:100), cex = 0.5)
+dist(dataFrame, method = "maximum", diag = TRUE) 
+dist(dataFrame, method = "maximum", diag = TRUE, upper = TRUE) 
+
+
+# -----------------------------------------------------------------
 
 ?text()
 
@@ -861,26 +895,145 @@ y <- y[sample(1:100)]
 plot(x, y, col = "blue", pch = 18, cex = 1)
 text(x + 0.05, y + 0.05, labels = as.character(1:100), cex = 0.5)
 
-?text()
-
-par(mfrow = c(1, 1), mar = c(0, 0, 0, 0))
+par(mfrow = c(1, 2), mar = c(0, 0, 0, 0))
 x <- rnorm(12, mean = rep(1:3, each = 4), sd = 0.2)
 y <- rnorm(12, mean = rep(c(1, 2, 1), each = 4), sd = 0.2)
 plot(x, y, col = "blue", pch = 19, cex = 2)
 text(x + 0.05, y + 0.05, labels = as.character(1:12))
 
+#--------------------------------------------------
+x <- rnorm(12, mean = rep(1:3, each = 4), sd = 0.2)
+y <- rnorm(12, mean = rep(c(1, 2, 1), each = 4), sd = 0.2)
+
+par(mfrow = c(1, 2))
 par(mar = c(5.1, 4.1, 4.1, 2.1))
+plot(x, y, col = "blue", pch = 19, cex = 1)
+text(x + 0.05, y + 0.05, labels = as.character(1:12), ces=1)
+
 dataFrame <- data.frame(x = x, y = y)
+dataFrame
 distxy <- dist(dataFrame) # euclidienne par defaut
+distxy
 hClustering <- hclust(distxy)
 plot(hClustering) # dendrogram
+
+
 class(hClustering)
 attributes(hClustering)
 hClustering
+hClustering$merge
+hClustering$height
+hClustering$order
+hClustering$labels
+hClustering$method
+hClustering$call
+hClustering$dist.method
 
 ?hclust()
+# method : the agglomeration method to be used
 # method = "ward.D", "ward.D2", "single", "complete", 
 # "average" (= UPGMA), "mcquitty" (= WPGMA), "median" (= WPGMC) or "centroid" (= UPGMC)
+
+
+# A number of different clustering methods are provided. 
+# Ward's minimum variance method aims at finding compact, spherical clusters. 
+# (minimise l'intertie intraclasse / maximise l'intertie interclasse)
+# The complete linkage method finds similar clusters. (saut maximun : dissim(C1,C2)=max dissim(x,y))
+# The single linkage method (which is closely related to the minimal spanning tree) adopts a ???friends of friends??? clustering strategy. 
+# dissim(C1,C2)= min  dissim(x,y)
+# The other methods can be regarded as aiming for clusters with characteristics somewhere between the single and complete link methods. 
+# Note however, that methods "median" and "centroid" are not leading to a monotone distance measure, 
+# or equivalently the resulting dendrograms can have so called inversions or reversals which are hard to interpret, 
+# but note the trichotomies in Legendre and Legendre (2012).
+
+
+
+
+par(mfrow = c(2, 2))
+par(mar = c(0, 0, 0, 0))
+
+plot(x, y, col = "blue", pch = 19, cex = 1)
+text(x + 0.05, y + 0.05, labels = as.character(1:12), cex=1)
+
+par(mar = c(5.1, 4.1, 4.1, 2.1))
+
+dataFrame <- data.frame(x = x, y = y)
+dataFrame
+distxy <- dist(dataFrame) # euclidienne par defaut
+distxy
+H1 <- hclust(distxy, method = "ward.D")
+plot(H1) # dendrogram
+H2 <- hclust(distxy, method = "complete")
+plot(H2) # dendrogram
+H3 <- hclust(distxy, method = "single")
+plot(H3) 
+
+#---------------autre distance------------------------
+
+par(mfrow = c(2, 2))
+par(mar = c(0, 0, 0, 0))
+
+plot(x, y, col = "blue", pch = 19, cex = 1)
+text(x + 0.05, y + 0.05, labels = as.character(1:12), cex=1)
+
+par(mar = c(5.1, 4.1, 4.1, 2.1))
+
+dataFrame <- data.frame(x = x, y = y)
+dataFrame
+distxy <- dist(dataFrame,method = "maximum") # L1
+distxy
+H1 <- hclust(distxy, method = "ward.D")
+plot(H1) # dendrogram
+H2 <- hclust(distxy, method = "complete")
+plot(H2) # dendrogram
+H3 <- hclust(distxy, method = "single")
+plot(H3) 
+
+
+#---------------------------------------------------
+
+# ---------------plus de points 100--------------------------------------------------
+set.seed(1234)
+x <- rnorm(100, mean = rep(1:4, each = 25), sd = 0.35)
+y <- rnorm(100, mean = rep(c(1, 2, 1,2), each = 25), sd = 0.35)
+
+par(mfrow = c(2, 2))
+par(mar = c(0, 0, 0, 0))
+plot(x, y, col = "blue", pch = 18, cex = 1)
+text(x + 0.05, y + 0.05, labels = as.character(1:100), cex = 0.5)
+par(mar = c(5.1, 4.1, 4.1, 2.1))
+
+dataFrame <- data.frame(x = x, y = y)
+distxy <- dist(dataFrame,method = "euclidean") # L1
+H1 <- hclust(distxy, method = "ward.D")
+plot(H1) # dendrogram
+H2 <- hclust(distxy, method = "complete")
+plot(H2) # dendrogram
+H3 <- hclust(distxy, method = "single")
+plot(H3) 
+
+
+
+H1$order
+H2$order
+H3$order
+
+colour1 <- cutree(H1, k=4)
+colour2 <- cutree(H2, k=4)
+colour3 <- cutree(H3, k=4)
+colour3
+par(mar = c(0, 0, 0, 0))
+plot(x, y, col = "blue", pch = 18, cex = 1)
+text(x + 0.05, y + 0.05, labels = as.character(1:100), cex = 0.5)
+plot(x, y, col = "blue", pch = 18, cex = 1)
+text(x + 0.05, y + 0.05, labels = as.character(1:100), cex = 0.5, col = colour1)
+plot(x, y, col = "blue", pch = 18, cex = 1)
+text(x + 0.05, y + 0.05, labels = as.character(1:100), cex = 0.5, col = colour2)
+plot(x, y, col = "blue", pch = 18, cex = 1)
+text(x + 0.05, y + 0.05, labels = as.character(1:100), cex = 0.5, col = colour3)
+
+
+#-----------------pour un nombre de clustyer donn??....colorier....
 
 
 
@@ -904,17 +1057,36 @@ myplclust <- function(hclust, lab = hclust$labels, lab.col = rep(1, length(hclus
 }
 
 
+
+par(mfrow = c(2, 2))
+par(mar = c(0, 0, 0, 0))
+plot(x, y, col = "blue", pch = 18, cex = 1)
+text(x + 0.05, y + 0.05, labels = as.character(1:100), cex = 0.5)
+par(mar = c(5.1, 4.1, 4.1, 2.1))
+
+myplclust(H1, lab= H1$order, lab.col = rep(1:4, each = 25))
+myplclust(H2, lab= H2$order, lab.col = rep(1:4, each = 25))
+myplclust(H3, lab= H3$order, lab.col = rep(1:4, each = 25))
+
+
 # http://gallery.r-enthusiasts.com/RGraphGallery.php?graph=79
 
 # How to merge points together....
 # average...
 # Complete linkage : prendre la plus grande des distance des couples des 2 clusters...
 # la methode average donnerait la distance entre les deux baricentres
+set.seed(1234)
+
+par(mfrow = c(1, 1), mar = c(5.1, 4.1, 4.1, 2.1))
+x <- rnorm(12, mean = rep(1:3, each = 4), sd = 0.2)
+y <- rnorm(12, mean = rep(c(1, 2, 1), each = 4), sd = 0.2)
+
+
 dataFrame <- data.frame(x = x, y = y)
 distxy <- dist(dataFrame)
 hClustering <- hclust(distxy)
 myplclust(hClustering, lab = rep(1:3, each = 4), lab.col = rep(1:3, each = 4))
-
+myplclust(hClustering, lab = hClustering$order, lab.col = rep(1:3, each = 4))
 
 dataFrame <- data.frame(x = x, y = y)
 set.seed(143)
@@ -930,18 +1102,20 @@ dataFrame <- data.frame(x = x, y = y)
 set.seed(143)
 dataMatrix <- as.matrix(dataFrame)[sample(1:100), ]
 heatmap(dataMatrix)
-
+?heatmap
 # ----------------------------------------------------------
 # heatmap interessant pour voir rapidement des gros dataset X avec 
 # beaucoup de lignes et/ou de colonnes
 # ----------------------------------------------------------
 
-# Attention a la sensibilite au scaling et aux points extr??mes...
+# Attention a la sensibilite au scaling et aux points extremes...
 # tester en changeant la distance metrique ou merging strat
 
 # ----------------------------------------------------------
 # K-Means Clustering
 # ----------------------------------------------------------
+
+?kmeans
 
 # partioning approach
 # param : number of cluster, initials centroids, distance... 
