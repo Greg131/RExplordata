@@ -934,6 +934,32 @@ hClustering$dist.method
 # method = "ward.D", "ward.D2", "single", "complete", 
 # "average" (= UPGMA), "mcquitty" (= WPGMA), "median" (= WPGMC) or "centroid" (= UPGMC)
 
+# complete : complete linkage or farthest neighbour clustering : 
+# La distance entre deux clusters est le max des distances entre les elements de chaque cluster
+# Complete linkage clustering avoids a drawback of the alternative single linkage method - 
+# the so-called chaining phenomenon, where clusters formed via single linkage clustering 
+# may be forced together due to single elements being close to each other, 
+# even though many of the elements in each cluster may be very distant to each other. 
+# Complete linkage tends to find compact clusters of approximately equal diameters
+
+# Single linkage / nearest neighbour clustering ... min
+
+
+# UPGMA (Unweighted Pair Group Method with Arithmetic Mean)
+# The distance between any two clusters A and B is taken to be 
+# the average of all distances between pairs of objects "x" in A and "y" in B, 
+# that is, the mean distance between elements of each cluster
+
+# WPGMA  Weighted Pair-Group Method with Arithmetic mean (en fait 1/2 indep du nb d'elt du cluster)
+
+# Assume that there are three clusters called C1, C2 and C3 including n1, n2 and n3 number of rows or columns. Clusters C2 and C3 are aggregated to form a new single cluster called C4.
+# UPGMA The distance between cluster C1 and the new cluster C4 is calculated as: d(c1,c4)= n2/(n2+n3)*d(c1,c2)+ n3/(n2+n3)d(c1,c3)
+# WPGMA The distance between cluster C1 and the new cluster C4 is calculated as: d(c1,c4)= 1/2*d(c1,c2)+ 1/2d(c1,c3)
+
+# UPGMC Unweighted Pair Group Method with Centroid 
+# WPGMC Weighted Pair Group Method with Centroid .... depond??re les premiers ??l??ments...
+
+
 
 # A number of different clustering methods are provided. 
 # Ward's minimum variance method aims at finding compact, spherical clusters. 
@@ -967,6 +993,19 @@ H2 <- hclust(distxy, method = "complete")
 plot(H2) # dendrogram
 H3 <- hclust(distxy, method = "single")
 plot(H3) 
+
+H4 <- hclust(distxy, method = "average")
+plot(H4) 
+
+H5 <- hclust(distxy, method = "mcquitty")
+plot(H5) 
+
+H6 <- hclust(distxy, method = "median")
+plot(H6) 
+
+H7 <- hclust(distxy, method = "centroid")
+plot(H7) 
+H7$height
 
 #---------------autre distance------------------------
 
@@ -1013,6 +1052,18 @@ H3 <- hclust(distxy, method = "single")
 plot(H3) 
 
 
+H4 <- hclust(distxy, method = "average")
+plot(H4) 
+
+H5 <- hclust(distxy, method = "mcquitty")
+plot(H5) 
+
+H6 <- hclust(distxy, method = "median")
+plot(H6) 
+
+H7 <- hclust(distxy, method = "centroid")
+plot(H7) 
+
 
 H1$order
 H2$order
@@ -1021,6 +1072,11 @@ H3$order
 colour1 <- cutree(H1, k=4)
 colour2 <- cutree(H2, k=4)
 colour3 <- cutree(H3, k=4)
+colour4 <- cutree(H4, k=4)
+colour5 <- cutree(H5, k=4)
+colour6 <- cutree(H6, k=4)
+colour7 <- cutree(H7, k=4)
+
 colour3
 par(mar = c(0, 0, 0, 0))
 plot(x, y, col = "blue", pch = 18, cex = 1)
@@ -1032,6 +1088,171 @@ text(x + 0.05, y + 0.05, labels = as.character(1:100), cex = 0.5, col = colour2)
 plot(x, y, col = "blue", pch = 18, cex = 1)
 text(x + 0.05, y + 0.05, labels = as.character(1:100), cex = 0.5, col = colour3)
 
+
+#-----------------construction par ??tape---------------------------------------
+
+set.seed(1234)
+x <- rnorm(40, mean = rep(1:4, each = 10), sd = 0.35)
+y <- rnorm(40, mean = rep(c(1, 2, 1,2), each = 10), sd = 0.35)
+
+par(mfrow = c(7, 4))
+par(mar = c(0, 0, 0, 0))
+plot(x, y, col = "blue", pch = 18, cex = 2)
+text(x + 0.1, y + 0.1, labels = as.character(1:40), cex = 1)
+
+
+dataFrame <- data.frame(x = x, y = y)
+distxy <- dist(dataFrame,method = "euclidean") # L1
+H1 <- hclust(distxy, method = "ward.D")
+#plot(H1) # dendrogram
+H2 <- hclust(distxy, method = "complete")
+#plot(H2) # dendrogram
+H3 <- hclust(distxy, method = "single")
+#plot(H3) 
+H4 <- hclust(distxy, method = "average")
+#plot(H4) 
+H5 <- hclust(distxy, method = "mcquitty")
+#plot(H5) 
+H6 <- hclust(distxy, method = "median")
+#plot(H6) 
+H7 <- hclust(distxy, method = "centroid")
+#plot(H7) 
+
+colour1.20 <- cutree(H1, k=20)
+plot(x, y, col = "blue", pch = 18, cex = 2)
+text(x + 0.1, y + 0.1, labels = as.character(1:40), cex = 1, col = colour1.20)
+
+colour1.10 <- cutree(H1, k=10)
+plot(x, y, col = "blue", pch = 18, cex = 2)
+text(x + 0.1, y + 0.1, labels = as.character(1:40), cex = 1, col = colour1.10)
+
+colour1.4 <- cutree(H1, k=4)
+plot(x, y, col = "blue", pch = 18, cex = 2)
+text(x + 0.1, y + 0.1, labels = as.character(1:40), cex = 1, col = colour1.4)
+text(1,2.5, "Ward")
+text(1,2.2, "Euclidien")
+
+
+plot(x, y, col = "blue", pch = 18, cex = 2)
+text(x + 0.1, y + 0.1, labels = as.character(1:40), cex = 1)
+
+
+colour2.20 <- cutree(H2, k=20)
+plot(x, y, col = "blue", pch = 18, cex = 2)
+text(x + 0.1, y + 0.1, labels = as.character(1:40), cex = 1, col = colour2.20)
+
+colour2.10 <- cutree(H2, k=10)
+plot(x, y, col = "blue", pch = 18, cex = 2)
+text(x + 0.1, y + 0.1, labels = as.character(1:40), cex = 1, col = colour2.10)
+
+colour2.4 <- cutree(H2, k=4)
+plot(x, y, col = "blue", pch = 18, cex = 2)
+text(x + 0.1, y + 0.1, labels = as.character(1:40), cex = 1, col = colour2.4)
+text(1,2.5, "Complete linkage")
+text(1,2.2, "Euclidien")
+
+
+plot(x, y, col = "blue", pch = 18, cex = 2)
+text(x + 0.1, y + 0.1, labels = as.character(1:40), cex = 1)
+
+
+colour3.20 <- cutree(H3, k=20)
+plot(x, y, col = "blue", pch = 18, cex = 2)
+text(x + 0.1, y + 0.1, labels = as.character(1:40), cex = 1, col = colour3.20)
+
+colour3.10 <- cutree(H3, k=10)
+plot(x, y, col = "blue", pch = 18, cex = 2)
+text(x + 0.1, y + 0.1, labels = as.character(1:40), cex = 1, col = colour3.10)
+
+colour3.4 <- cutree(H3, k=4)
+plot(x, y, col = "blue", pch = 18, cex = 2)
+text(x + 0.1, y + 0.1, labels = as.character(1:40), cex = 1, col = colour3.4)
+text(1,2.5, "Single linkage")
+text(1,2.2, "Euclidien")
+
+
+plot(x, y, col = "blue", pch = 18, cex = 2)
+text(x + 0.1, y + 0.1, labels = as.character(1:40), cex = 1)
+
+
+colour4.20 <- cutree(H4, k=20)
+plot(x, y, col = "blue", pch = 18, cex = 2)
+text(x + 0.1, y + 0.1, labels = as.character(1:40), cex = 1, col = colour4.20)
+
+colour4.10 <- cutree(H4, k=10)
+plot(x, y, col = "blue", pch = 18, cex = 2)
+text(x + 0.1, y + 0.1, labels = as.character(1:40), cex = 1, col = colour4.10)
+
+colour4.4 <- cutree(H4, k=4)
+plot(x, y, col = "blue", pch = 18, cex = 2)
+text(x + 0.1, y + 0.1, labels = as.character(1:40), cex = 1, col = colour4.4)
+text(1,2.5, "Average (UPGMA)")
+text(1,2.2, "Euclidien")
+
+
+
+plot(x, y, col = "blue", pch = 18, cex = 2)
+text(x + 0.1, y + 0.1, labels = as.character(1:40), cex = 1)
+
+
+colour5.20 <- cutree(H5, k=20)
+plot(x, y, col = "blue", pch = 18, cex = 2)
+text(x + 0.1, y + 0.1, labels = as.character(1:40), cex = 1, col = colour5.20)
+
+colour5.10 <- cutree(H5, k=10)
+plot(x, y, col = "blue", pch = 18, cex = 2)
+text(x + 0.1, y + 0.1, labels = as.character(1:40), cex = 1, col = colour5.10)
+
+colour5.4 <- cutree(H5, k=4)
+plot(x, y, col = "blue", pch = 18, cex = 2)
+text(x + 0.1, y + 0.1, labels = as.character(1:40), cex = 1, col = colour5.4)
+text(1,2.5, "WPGMA")
+text(1,2.2, "Euclidien")
+
+
+plot(x, y, col = "blue", pch = 18, cex = 2)
+text(x + 0.1, y + 0.1, labels = as.character(1:40), cex = 1)
+
+
+colour6.20 <- cutree(H6, k=20)
+plot(x, y, col = "blue", pch = 18, cex = 2)
+text(x + 0.1, y + 0.1, labels = as.character(1:40), cex = 1, col = colour6.20)
+
+colour6.10 <- cutree(H6, k=10)
+plot(x, y, col = "blue", pch = 18, cex = 2)
+text(x + 0.1, y + 0.1, labels = as.character(1:40), cex = 1, col = colour6.10)
+
+colour6.4 <- cutree(H6, k=4)
+plot(x, y, col = "blue", pch = 18, cex = 2)
+text(x + 0.1, y + 0.1, labels = as.character(1:40), cex = 1, col = colour6.4)
+text(1,2.5, "Median (WPGMC)")
+text(1,2.2, "Euclidien")
+
+plot(x, y, col = "blue", pch = 18, cex = 2)
+text(x + 0.1, y + 0.1, labels = as.character(1:40), cex = 1)
+
+
+colour7.20 <- cutree(H7, k=20)
+plot(x, y, col = "blue", pch = 18, cex = 2)
+text(x + 0.1, y + 0.1, labels = as.character(1:40), cex = 1, col = colour7.20)
+
+colour7.10 <- cutree(H7, k=10)
+plot(x, y, col = "blue", pch = 18, cex = 2)
+text(x + 0.1, y + 0.1, labels = as.character(1:40), cex = 1, col = colour7.10)
+
+colour7.4 <- cutree(H7, k=4)
+plot(x, y, col = "blue", pch = 18, cex = 2)
+text(x + 0.1, y + 0.1, labels = as.character(1:40), cex = 1, col = colour7.4)
+text(1,2.5, "Centroid (UPGMC)")
+text(1,2.2, "Euclidien")
+
+
+?dev.copy
+dev.copy(png, file = "clustering_method_comparaison.png")
+dev.off()
+
+dev.copy(pdf, file = "clustering_method_comparaison.pdf")
+dev.off()
 
 #-----------------pour un nombre de clustyer donn??....colorier....
 
